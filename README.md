@@ -2,28 +2,73 @@
 
 Scripts de démarrage pour instances GPU Vast.ai.
 
-## Workflow
+## Prérequis
 
-1. Louer une instance sur Vast.ai (noter l'IP et le port SSH affiché)
-2. Ouvrir le terminal web de l'instance
-3. Lancer le bootstrap :
+- Clé SSH `runpod_nouvelle` présente dans `C:\Users\TON_USER\.ssh\`
+- VM Hetzner démarrée avec les données à transférer
+- Crédits suffisants sur le compte Vast.ai
+- VNCViewer : `E:\Documents\3D\Runpod\vncviewer64-1.15.0.exe`
+
+## Procédure complète
+
+### 1. Louer une instance
+
+- Aller sur https://cloud.vast.ai/search
+- Filtres : RAM minimum 128 Go, template **NVIDIA CUDA**
+- Cliquer sur **RENT**
+- Attendre que l'instance soit active
+- **Noter l'IP et le port SSH** affichés dans l'interface
+
+### 2. Bootstrap dans le terminal web
 
 ```bash
+apt-get update -y
+apt-get install -y curl
 curl -fsSL https://raw.githubusercontent.com/Wils-on-fire/vastai-bootstrap/refs/heads/main/bootstrap_vastai.sh | bash
 ```
 
-4. Réinjecter les données depuis Hetzner via `rsync`
-5. Travailler
-6. Sauvegarder vers Hetzner puis détruire l'instance
+### 3. Connexion SSH (PowerShell fenêtre 1)
 
-## Connexion VNC depuis Windows
-
-1. Créer un tunnel SSH :
-```bash
-ssh -L 5901:localhost:5901 root@IP_INSTANCE -p PORT_VAST
+```powershell
+ssh -i $env:USERPROFILE\.ssh\runpod_nouvelle root@IP_VAST -p PORT_VAST
 ```
-2. Se connecter avec TigerVNC sur `localhost:5901`
-3. Mot de passe : `vastvnc`
+
+### 4. Tunnel VNC (PowerShell fenêtre 2)
+
+```powershell
+ssh -i $env:USERPROFILE\.ssh\runpod_nouvelle -L 5901:localhost:5901 root@IP_VAST -p PORT_VAST
+```
+
+### 5. Connexion VNC
+
+- Ouvrir `E:\Documents\3D\Runpod\vncviewer64-1.15.0.exe`
+- Adresse : `localhost:5901`
+- Mot de passe : `vastvnc`
+
+### 6. Réinjection des données depuis Hetzner
+
+Dans le terminal de l'instance :
+
+```bash
+rsync -avz --no-owner --no-group \
+  -e "ssh -i /root/.ssh/runpod_nouvelle" \
+  wil@IP_HETZNER:/home/wil/backup-runpod-workspace/ \
+  /workspace/
+```
+
+### 7. Fin de session — sauvegarde vers Hetzner
+
+```bash
+rsync -avz --no-owner --no-group \
+  -e "ssh -i /root/.ssh/runpod_nouvelle" \
+  /workspace/ \
+  wil@IP_HETZNER:/home/wil/backup-runpod-workspace/
+```
+
+### 8. Détruire l'instance
+
+- Dans l'interface Vast.ai → **Instances**
+- Cliquer sur **Destroy** pour stopper toute facturation
 
 ## Scripts
 
