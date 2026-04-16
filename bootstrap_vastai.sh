@@ -11,7 +11,9 @@ apt-get install -y \
   xfce4 xfce4-goodies \
   tigervnc-standalone-server \
   xterm \
-  iproute2 net-tools
+  iproute2 net-tools \
+  dbus-x11 \
+  rsync
 
 echo "=== [3/4] Configuration et démarrage du serveur VNC (TigerVNC) ==="
 
@@ -24,7 +26,8 @@ cat > /root/.vnc/xstartup << 'XEOF'
 #!/bin/sh
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
-exec startxfce4
+export LIBGL_ALWAYS_SOFTWARE=1
+dbus-launch --exit-with-session startxfce4
 XEOF
 chmod +x /root/.vnc/xstartup
 
